@@ -65,6 +65,15 @@ def register_charity():
     db.session.commit()
     return jsonify({'message': 'Charity registration submitted for review.'})
 
+@app.route('/api/charities/login', methods=['POST'])
+def login_charities():
+    data = request.get_json()
+    charities = Charity.query.filter_by(email=data['email']).first()
+    if charities and bcrypt.check_password_hash(charities.password, data['password']):
+        login_user(charities)
+        return jsonify({'message': 'Login successful!'})
+    else:
+        return jsonify({'error': 'Invalid email or password'}), 401
 @app.route('/api/charities/apply', methods=['POST'])
 def apply_charity():
     data = request.get_json()
@@ -135,6 +144,15 @@ def register_administrator():
     db.session.commit()
     return jsonify({'message': 'Administrator registered successfully!'})
 
+@app.route('/api/administrators/login', methods=['POST'])
+def login_admin():
+    data = request.get_json()
+    admin = Administrator.query.filter_by(email=data['email']).first()
+    if admin and bcrypt.check_password_hash(admin.password, data['password']):
+        login_user(admin)
+        return jsonify({'message': 'Login successful!'})
+    else:
+        return jsonify({'error': 'Invalid email or password'}), 401
 
 # Add route for admin to view pending charities
 @app.route('/api/admin/pending_charities', methods=['GET'])
