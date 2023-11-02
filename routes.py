@@ -9,7 +9,7 @@ api = Api(app, version='1.0', title='Charity API', description='API for managing
  #Define namespaces
 donors_ns = api.namespace('donors', description='Donor operations')
 charities_ns = api.namespace('charities', description='Charity operations')
-admins_ns = api.namespace('administrators', description='Administrator operations')
+administrators_ns = api.namespace('administrators', description='Administrator operations')
 
 # Donor DTO (Data Transfer Object)
 donor_model = api.model('Donor', {
@@ -27,9 +27,9 @@ charity_model = api.model('Charity', {
 })
 
 # Administrator DTO
-admin_model = api.model('Administrator', {
+administrator_model = administrators_ns.model('Administrator', {
     'username': fields.String(required=True, description='Username'),
-    'password': fields.String(required=True, description='Password')
+    'password': fields.String(required=True, description='Password'),
 })
 
 @login_manager.user_loader
@@ -91,8 +91,7 @@ class DonorLogout(Resource):
 
 
 # Charity Routes
-# Charity Routes
-@charities_ns.route('/')
+@charities_ns.route('/charities')
 class CharityList(Resource):
     @charities_ns.doc('get_charities')
     def get(self):
@@ -100,7 +99,7 @@ class CharityList(Resource):
         charities = Charity.query.all()
         return jsonify([charity.serialize() for charity in charities])
 
-@charities_ns.route('/<int:charity_id>')
+@charities_ns.route('/charities/<int:charity_id>')
 class CharityResource(Resource):
     @charities_ns.doc('get_charity')
     def get(self, charity_id):
@@ -108,7 +107,7 @@ class CharityResource(Resource):
         charity = Charity.query.get_or_404(charity_id)
         return jsonify(charity.serialize())
 
-@charities_ns.route('/register')
+@charities_ns.route('/charities/register')
 class CharityRegister(Resource):
     @charities_ns.doc('register_charity')
     @charities_ns.expect(charity_model)
@@ -121,7 +120,7 @@ class CharityRegister(Resource):
         db.session.commit()
         return {'message': 'Charity registration submitted for review!'}
 
-@charities_ns.route('/login')
+@charities_ns.route('/charities/login')
 class CharityLogin(Resource):
     @charities_ns.doc('login_charity')
     @charities_ns.expect(charity_model)
@@ -135,7 +134,7 @@ class CharityLogin(Resource):
         else:
             return {'error': 'Invalid name or password'}, 401
 
-@charities_ns.route('/apply')
+@charities_ns.route('/charities/apply')
 class CharityApply(Resource):
     @charities_ns.doc('apply_charity')
     @charities_ns.expect(charity_model)
@@ -147,7 +146,7 @@ class CharityApply(Resource):
         db.session.commit()
         return {'message': 'Charity application submitted for review!'}
 
-@charities_ns.route('/setup/<int:charity_id>')
+@charities_ns.route('/charities/setup/<int:charity_id>')
 class CharitySetup(Resource):
     @charities_ns.doc('setup_charity')
     @charities_ns.expect(charity_model)
@@ -159,7 +158,7 @@ class CharitySetup(Resource):
         # Implement logic to set up charity details here.
         return {'message': 'Charity details set up successfully!'}
 
-@charities_ns.route('/non_anonymous_donors')
+@charities_ns.route('/charities/non_anonymous_donors')
 class CharityNonAnonymousDonors(Resource):
     @charities_ns.doc('get_non_anonymous_donors')
     @login_required
@@ -168,7 +167,7 @@ class CharityNonAnonymousDonors(Resource):
         non_anonymous_donors = Donor.query.filter_by(is_anonymous=False).all()
         return jsonify([donor.serialize() for donor in non_anonymous_donors])
 
-@charities_ns.route('/anonymous_donations')
+@charities_ns.route('/charities/anonymous_donations')
 class CharityAnonymousDonations(Resource):
     @charities_ns.doc('get_anonymous_donations')
     @login_required
@@ -177,7 +176,7 @@ class CharityAnonymousDonations(Resource):
         anonymous_donations = Donation.query.filter_by(is_anonymous=True).all()
         return jsonify([donation.serialize() for donation in anonymous_donations])
 
-@charities_ns.route('/total_donations')
+@charities_ns.route('/charities/total_donations')
 class CharityTotalDonations(Resource):
     @charities_ns.doc('get_total_donations')
     @login_required
@@ -186,7 +185,7 @@ class CharityTotalDonations(Resource):
         total_donations = sum(donation.amount for donation in current_user.donations_received)
         return {'total_donations': total_donations}
 
-@charities_ns.route('/post_story')
+@charities_ns.route('/charities/post_story')
 class CharityPostStory(Resource):
     @charities_ns.doc('post_beneficiary_story')
     @charities_ns.expect(charity_model)
@@ -199,7 +198,7 @@ class CharityPostStory(Resource):
         db.session.commit()
         return {'message': 'Story posted successfully!'}
 
-@charities_ns.route('/beneficiaries')
+@charities_ns.route('/charities/beneficiaries')
 class CharityBeneficiaries(Resource):
     @charities_ns.doc('get_beneficiaries')
     @login_required
@@ -209,71 +208,94 @@ class CharityBeneficiaries(Resource):
         return jsonify([beneficiary.serialize() for beneficiary in beneficiaries])
 
 # Administrator Routes
+@administrators_ns.route('/')
+class AdministratorList(Resource):
+    @administrators_ns.doc('get_administrators')
+    def get(self):
+        """Get all administrators"""
+        administrators = Administrator.query.all()
+        return jsonify([administrator.serialize() for administrator in administrators])
 
-@app.route('/api/administrators', methods=['GET'])
-def get_administrators():
-    administrators = Administrator.query.all()
-    return jsonify([administrator.serialize() for administrator in administrators])
+@administrators_ns.route('/<int:administrator_id>')
+class AdministratorResource(Resource):
+    @administrators_ns.doc('get_administrator')
+    def get(self, administrator_id):
+        """Get an administrator by ID"""
+        administrator = Administrator.query.get_or_404(administrator_id)
+        return jsonify(administrator.serialize())
 
-@app.route('/api/administrators/<int:administrator_id>', methods=['GET'])
-def get_administrator(administrator_id):
-    administrator = Administrator.query.get_or_404(administrator_id)
-    return jsonify(administrator.serialize())
+@administrators_ns.route('/register')
+class AdministratorRegister(Resource):
+    @administrators_ns.doc('register_administrator')
+    @administrators_ns.expect(administrator_model)
+    def post(self):
+        """Register an administrator"""
+        data = request.get_json()
+        hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+        administrator = Administrator(username=data['username'], password=hashed_password)
+        db.session.add(administrator)
+        db.session.commit()
+        return {'message': 'Administrator registered successfully!'}
 
-@app.route('/api/administrators/register', methods=['POST'])
-def register_administrator():
-    data = request.get_json()
-    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-    administrator = Administrator(username=data['username'], password=hashed_password)
-    db.session.add(administrator)
-    db.session.commit()
-    return jsonify({'message': 'Administrator registered successfully!'})
+@administrators_ns.route('/login')
+class AdministratorLogin(Resource):
+    @administrators_ns.doc('login_admin')
+    @administrators_ns.expect(administrator_model)
+    def post(self):
+        """Login as an administrator"""
+        data = request.get_json()
+        admin = Administrator.query.filter_by(username=data['username']).first()
+        if admin and bcrypt.check_password_hash(admin.password, data['password']):
+            login_user(admin)
+            return {'message': 'Login successful!'}
+        else:
+            return {'error': 'Invalid username or password'}, 401
 
-@app.route('/api/administrators/login', methods=['POST'])
-def login_admin():
-    data = request.get_json()
-    admin = Administrator.query.filter_by(email=data['email']).first()
-    if admin and bcrypt.check_password_hash(admin.password, data['password']):
-        login_user(admin)
-        return jsonify({'message': 'Login successful!'})
-    else:
-        return jsonify({'error': 'Invalid email or password'}), 401
+@administrators_ns.route('/pending_charities')
+class AdministratorPendingCharities(Resource):
+    @administrators_ns.doc('view_pending_charities')
+    def get(self):
+        """View pending charities"""
+        pending_charities = Charity.query.filter_by(status='Pending').all()
+        return jsonify([charity.serialize() for charity in pending_charities])
 
-# Add route for admin to view pending charities
-@app.route('/api/admin/pending_charities', methods=['GET'])
-def view_pending_charities():
-    pending_charities = Charity.query.filter_by(status='Pending').all()
-    return jsonify([charity.serialize() for charity in pending_charities])
+@administrators_ns.route('/approve_charity/<int:charity_id>')
+class AdministratorApproveCharity(Resource):
+    @administrators_ns.doc('approve_charity')
+    def post(self, charity_id):
+        """Approve a pending charity"""
+        charity = Charity.query.get_or_404(charity_id)
+        charity.status = 'Approved'
+        db.session.commit()
+        return {'message': 'Charity approved!'}
 
-# Add route for admin to approve a pending charity
-@app.route('/api/admin/approve_charity/<int:charity_id>', methods=['POST'])
-def approve_charity(charity_id):
-    charity = Charity.query.get_or_404(charity_id)
-    charity.status = 'Approved'
-    db.session.commit()
-    return jsonify({'message': 'Charity approved!'})
+@administrators_ns.route('/reject_charity/<int:charity_id>')
+class AdministratorRejectCharity(Resource):
+    @administrators_ns.doc('reject_charity')
+    def post(self, charity_id):
+        """Reject a pending charity"""
+        charity = Charity.query.get_or_404(charity_id)
+        db.session.delete(charity)
+        db.session.commit()
+        return {'message': 'Charity rejected!'}
 
-# Add route for admin to reject a pending charity
-@app.route('/api/admin/reject_charity/<int:charity_id>', methods=['POST'])
-def reject_charity(charity_id):
-    charity = Charity.query.get_or_404(charity_id)
-    db.session.delete(charity)
-    db.session.commit()
-    return jsonify({'message': 'Charity rejected!'})
+@administrators_ns.route('/all_charities')
+class AdministratorAllCharities(Resource):
+    @administrators_ns.doc('view_all_charities')
+    def get(self):
+        """View all charities"""
+        all_charities = Charity.query.all()
+        return jsonify([charity.serialize() for charity in all_charities])
 
-# Add route for admin to view all charities
-@app.route('/api/admin/all_charities', methods=['GET'])
-def view_all_charities():
-    all_charities = Charity.query.all()
-    return jsonify([charity.serialize() for charity in all_charities])
-
-# Add route for admin to delete a charity
-@app.route('/api/admin/delete_charity/<int:charity_id>', methods=['POST'])
-def delete_charity(charity_id):
-    charity = Charity.query.get_or_404(charity_id)
-    db.session.delete(charity)
-    db.session.commit()
-    return jsonify({'message': 'Charity deleted!'})
+@administrators_ns.route('/delete_charity/<int:charity_id>')
+class AdministratorDeleteCharity(Resource):
+    @administrators_ns.doc('delete_charity')
+    def post(self, charity_id):
+        """Delete a charity"""
+        charity = Charity.query.get_or_404(charity_id)
+        db.session.delete(charity)
+        db.session.commit()
+        return {'message': 'Charity deleted!'}
 
 if __name__ == '__main__':
     app.run(debug=True)
