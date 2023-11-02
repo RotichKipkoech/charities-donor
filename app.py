@@ -16,8 +16,6 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
 CORS(app)
-# Initialize Flask-RESTx
-api = Api(app, version='1.0', title='Charity API', description='API for managing charities, donors, and administrators')
 from routes import *
 # Create the database and tables based on models
 with app.app_context():

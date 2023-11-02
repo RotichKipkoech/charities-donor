@@ -4,6 +4,15 @@ from app import app, db, bcrypt, login_manager
 from models import Charity, Donor, Administrator, Donation, Beneficiary, Story
 from flask_restx import Api, Resource, fields
 
+
+api = Api(app, version='1.0', title='Charity API', description='API for managing charities, donors, and administrators')
+
+
+ #Define namespaces
+donors_ns = api.namespace('donors', description='Donor operations')
+charities_ns = api.namespace('charities', description='Charity operations')
+admins_ns = api.namespace('administrators', description='Administrator operations')
+
 @login_manager.user_loader
 def load_user(user_id):
     return Donor.query.get(int(user_id))
