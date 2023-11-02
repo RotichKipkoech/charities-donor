@@ -37,7 +37,7 @@ def load_user(user_id):
     return Donor.query.get(int(user_id))
 
 # Donor Routes
-@donors_ns.route('/donors')
+@donors_ns.route('/')
 class DonorList(Resource):
     @donors_ns.doc('get_donors')
     def get(self):
@@ -45,7 +45,7 @@ class DonorList(Resource):
         donors = Donor.query.all()
         return jsonify([donor.serialize() for donor in donors])
 
-@donors_ns.route('/donors/<int:donor_id>')
+@donors_ns.route('/<int:donor_id>')
 class DonorResource(Resource):
     @donors_ns.doc('get_donor')
     def get(self, donor_id):
@@ -53,7 +53,7 @@ class DonorResource(Resource):
         donor = Donor.query.get_or_404(donor_id)
         return jsonify(donor.serialize())
 
-@donors_ns.route('donors/register')
+@donors_ns.route('/register')
 class DonorRegister(Resource):
     @donors_ns.doc('register_donor')
     @donors_ns.expect(donor_model)
@@ -66,7 +66,7 @@ class DonorRegister(Resource):
         db.session.commit()
         return {'message': 'Donor registered successfully!'}
 
-@donors_ns.route('/donors/login')
+@donors_ns.route('/login')
 class DonorLogin(Resource):
     @donors_ns.doc('login_donor')
     @donors_ns.expect(donor_model)
@@ -80,7 +80,7 @@ class DonorLogin(Resource):
         else:
             return {'error': 'Invalid email or password'}, 401
 
-@donors_ns.route('/donors/logout')
+@donors_ns.route('/logout')
 class DonorLogout(Resource):
     @donors_ns.doc('logout_donor')
     @login_required
@@ -91,7 +91,7 @@ class DonorLogout(Resource):
 
 
 # Charity Routes
-@charities_ns.route('/charities')
+@charities_ns.route('/')
 class CharityList(Resource):
     @charities_ns.doc('get_charities')
     def get(self):
@@ -99,7 +99,7 @@ class CharityList(Resource):
         charities = Charity.query.all()
         return jsonify([charity.serialize() for charity in charities])
 
-@charities_ns.route('/charities/<int:charity_id>')
+@charities_ns.route('/<int:charity_id>')
 class CharityResource(Resource):
     @charities_ns.doc('get_charity')
     def get(self, charity_id):
@@ -107,7 +107,7 @@ class CharityResource(Resource):
         charity = Charity.query.get_or_404(charity_id)
         return jsonify(charity.serialize())
 
-@charities_ns.route('/charities/register')
+@charities_ns.route('/register')
 class CharityRegister(Resource):
     @charities_ns.doc('register_charity')
     @charities_ns.expect(charity_model)
@@ -120,7 +120,7 @@ class CharityRegister(Resource):
         db.session.commit()
         return {'message': 'Charity registration submitted for review!'}
 
-@charities_ns.route('/charities/login')
+@charities_ns.route('/login')
 class CharityLogin(Resource):
     @charities_ns.doc('login_charity')
     @charities_ns.expect(charity_model)
@@ -134,7 +134,7 @@ class CharityLogin(Resource):
         else:
             return {'error': 'Invalid name or password'}, 401
 
-@charities_ns.route('/charities/apply')
+@charities_ns.route('/apply')
 class CharityApply(Resource):
     @charities_ns.doc('apply_charity')
     @charities_ns.expect(charity_model)
@@ -146,7 +146,7 @@ class CharityApply(Resource):
         db.session.commit()
         return {'message': 'Charity application submitted for review!'}
 
-@charities_ns.route('/charities/setup/<int:charity_id>')
+@charities_ns.route('/setup/<int:charity_id>')
 class CharitySetup(Resource):
     @charities_ns.doc('setup_charity')
     @charities_ns.expect(charity_model)
@@ -158,7 +158,7 @@ class CharitySetup(Resource):
         # Implement logic to set up charity details here.
         return {'message': 'Charity details set up successfully!'}
 
-@charities_ns.route('/charities/non_anonymous_donors')
+@charities_ns.route('/non_anonymous_donors')
 class CharityNonAnonymousDonors(Resource):
     @charities_ns.doc('get_non_anonymous_donors')
     @login_required
@@ -167,7 +167,7 @@ class CharityNonAnonymousDonors(Resource):
         non_anonymous_donors = Donor.query.filter_by(is_anonymous=False).all()
         return jsonify([donor.serialize() for donor in non_anonymous_donors])
 
-@charities_ns.route('/charities/anonymous_donations')
+@charities_ns.route('/anonymous_donations')
 class CharityAnonymousDonations(Resource):
     @charities_ns.doc('get_anonymous_donations')
     @login_required
@@ -176,7 +176,7 @@ class CharityAnonymousDonations(Resource):
         anonymous_donations = Donation.query.filter_by(is_anonymous=True).all()
         return jsonify([donation.serialize() for donation in anonymous_donations])
 
-@charities_ns.route('/charities/total_donations')
+@charities_ns.route('/total_donations')
 class CharityTotalDonations(Resource):
     @charities_ns.doc('get_total_donations')
     @login_required
@@ -185,7 +185,7 @@ class CharityTotalDonations(Resource):
         total_donations = sum(donation.amount for donation in current_user.donations_received)
         return {'total_donations': total_donations}
 
-@charities_ns.route('/charities/post_story')
+@charities_ns.route('/post_story')
 class CharityPostStory(Resource):
     @charities_ns.doc('post_beneficiary_story')
     @charities_ns.expect(charity_model)
@@ -198,7 +198,7 @@ class CharityPostStory(Resource):
         db.session.commit()
         return {'message': 'Story posted successfully!'}
 
-@charities_ns.route('/charities/beneficiaries')
+@charities_ns.route('/beneficiaries')
 class CharityBeneficiaries(Resource):
     @charities_ns.doc('get_beneficiaries')
     @login_required
