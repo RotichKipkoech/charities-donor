@@ -4,6 +4,8 @@ from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
 from config import Config
 from flask_cors import CORS
+from flask_restx import Api
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -14,6 +16,7 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
 CORS(app)
+api = Api(app, version='1.0', title='Your API', description='Your API Description')
 from routes import *
 # Create the database and tables based on models
 with app.app_context():
