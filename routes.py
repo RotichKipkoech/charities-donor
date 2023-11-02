@@ -91,83 +91,122 @@ class DonorLogout(Resource):
 
 
 # Charity Routes
+# Charity Routes
+@charities_ns.route('/')
+class CharityList(Resource):
+    @charities_ns.doc('get_charities')
+    def get(self):
+        """Get all charities"""
+        charities = Charity.query.all()
+        return jsonify([charity.serialize() for charity in charities])
 
-@app.route('/api/charities', methods=['GET'])
-def get_charities():
-    charities = Charity.query.all()
-    return jsonify([charity.serialize() for charity in charities])
+@charities_ns.route('/<int:charity_id>')
+class CharityResource(Resource):
+    @charities_ns.doc('get_charity')
+    def get(self, charity_id):
+        """Get a charity by ID"""
+        charity = Charity.query.get_or_404(charity_id)
+        return jsonify(charity.serialize())
 
-@app.route('/api/charities/<int:charity_id>', methods=['GET'])
-def get_charity(charity_id):
-    charity = Charity.query.get_or_404(charity_id)
-    return jsonify(charity.serialize())
+@charities_ns.route('/register')
+class CharityRegister(Resource):
+    @charities_ns.doc('register_charity')
+    @charities_ns.expect(charity_model)
+    def post(self):
+        """Register a charity"""
+        data = request.get_json()
+        hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+        charity = Charity(name=data['name'], description=data['description'], password=hashed_password, status='Pending')
+        db.session.add(charity)
+        db.session.commit()
+        return {'message': 'Charity registration submitted for review!'}
 
-@app.route('/api/charities/register', methods=['POST'])
-def register_charity():
-    data = request.get_json()
-    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-    charity = Charity(name=data['name'], description=data['description'], password=hashed_password, status='Pending')
-    db.session.add(charity)
-    db.session.commit()
-    return jsonify({'message': 'Charity registration submitted for review.'})
+@charities_ns.route('/login')
+class CharityLogin(Resource):
+    @charities_ns.doc('login_charity')
+    @charities_ns.expect(charity_model)
+    def post(self):
+        """Login as a charity"""
+        data = request.get_json()
+        charity = Charity.query.filter_by(name=data['name']).first()
+        if charity and bcrypt.check_password_hash(charity.password, data['password']):
+            login_user(charity)
+            return {'message': 'Login successful!'}
+        else:
+            return {'error': 'Invalid name or password'}, 401
 
-@app.route('/api/charities/login', methods=['POST'])
-def login_charities():
-    data = request.get_json()
-    charities = Charity.query.filter_by(email=data['email']).first()
-    if charities and bcrypt.check_password_hash(charities.password, data['password']):
-        login_user(charities)
-        return jsonify({'message': 'Login successful!'})
-    else:
-        return jsonify({'error': 'Invalid email or password'}), 401
-@app.route('/api/charities/apply', methods=['POST'])
-def apply_charity():
-    data = request.get_json()
-    charity = Charity(name=data['name'], description=data['description'], status='Pending')
-    db.session.add(charity)
-    db.session.commit()
-    return jsonify({'message': 'Charity application submitted for review.'})
+@charities_ns.route('/apply')
+class CharityApply(Resource):
+    @charities_ns.doc('apply_charity')
+    @charities_ns.expect(charity_model)
+    def post(self):
+        """Apply for charity status"""
+        data = request.get_json()
+        charity = Charity(name=data['name'], description=data['description'], status='Pending')
+        db.session.add(charity)
+        db.session.commit()
+        return {'message': 'Charity application submitted for review!'}
 
-@app.route('/api/charities/setup/<int:charity_id>', methods=['POST'])
-@login_required
-def setup_charity(charity_id):
-    charity = Charity.query.get_or_404(charity_id)
-    data = request.get_json()
-    # Implement logic to set up charity details here.
-    return jsonify({'message': 'Charity details set up successfully!'})
+@charities_ns.route('/setup/<int:charity_id>')
+class CharitySetup(Resource):
+    @charities_ns.doc('setup_charity')
+    @charities_ns.expect(charity_model)
+    @login_required
+    def post(self, charity_id):
+        """Set up charity details"""
+        charity = Charity.query.get_or_404(charity_id)
+        data = request.get_json()
+        # Implement logic to set up charity details here.
+        return {'message': 'Charity details set up successfully!'}
 
-@app.route('/api/charities/non_anonymous_donors', methods=['GET'])
-@login_required
-def get_non_anonymous_donors():
-    non_anonymous_donors = Donor.query.filter_by(is_anonymous=False).all()
-    return jsonify([donor.serialize() for donor in non_anonymous_donors])
+@charities_ns.route('/non_anonymous_donors')
+class CharityNonAnonymousDonors(Resource):
+    @charities_ns.doc('get_non_anonymous_donors')
+    @login_required
+    def get(self):
+        """Get non-anonymous donors associated with the charity"""
+        non_anonymous_donors = Donor.query.filter_by(is_anonymous=False).all()
+        return jsonify([donor.serialize() for donor in non_anonymous_donors])
 
-@app.route('/api/charities/anonymous_donations', methods=['GET'])
-@login_required
-def get_anonymous_donations():
-    anonymous_donations = Donation.query.filter_by(is_anonymous=True).all()
-    return jsonify([donation.serialize() for donation in anonymous_donations])
+@charities_ns.route('/anonymous_donations')
+class CharityAnonymousDonations(Resource):
+    @charities_ns.doc('get_anonymous_donations')
+    @login_required
+    def get(self):
+        """Get anonymous donations associated with the charity"""
+        anonymous_donations = Donation.query.filter_by(is_anonymous=True).all()
+        return jsonify([donation.serialize() for donation in anonymous_donations])
 
-@app.route('/api/charities/total_donations', methods=['GET'])
-@login_required
-def get_total_donations():
-    total_donations = sum(donation.amount for donation in current_user.donations_received)
-    return jsonify({'total_donations': total_donations})
+@charities_ns.route('/total_donations')
+class CharityTotalDonations(Resource):
+    @charities_ns.doc('get_total_donations')
+    @login_required
+    def get(self):
+        """Get the total donations received by the charity"""
+        total_donations = sum(donation.amount for donation in current_user.donations_received)
+        return {'total_donations': total_donations}
 
-@app.route('/api/charities/post_story', methods=['POST'])
-@login_required
-def post_beneficiary_story():
-    data = request.get_json()
-    story = Story(beneficiary_id=data['beneficiary_id'], content=data['content'])
-    db.session.add(story)
-    db.session.commit()
-    return jsonify({'message': 'Story posted successfully!'})
+@charities_ns.route('/post_story')
+class CharityPostStory(Resource):
+    @charities_ns.doc('post_beneficiary_story')
+    @charities_ns.expect(charity_model)
+    @login_required
+    def post(self):
+        """Post a beneficiary story"""
+        data = request.get_json()
+        story = Story(beneficiary_id=data['beneficiary_id'], content=data['content'])
+        db.session.add(story)
+        db.session.commit()
+        return {'message': 'Story posted successfully!'}
 
-@app.route('/api/charities/beneficiaries', methods=['GET'])
-@login_required
-def get_beneficiaries():
-    beneficiaries = Beneficiary.query.all()
-    return jsonify([beneficiary.serialize() for beneficiary in beneficiaries])
+@charities_ns.route('/beneficiaries')
+class CharityBeneficiaries(Resource):
+    @charities_ns.doc('get_beneficiaries')
+    @login_required
+    def get(self):
+        """Get all beneficiaries associated with the charity"""
+        beneficiaries = Beneficiary.query.all()
+        return jsonify([beneficiary.serialize() for beneficiary in beneficiaries])
 
 # Administrator Routes
 
