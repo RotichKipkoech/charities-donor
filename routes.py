@@ -37,41 +37,58 @@ def load_user(user_id):
     return Donor.query.get(int(user_id))
 
 # Donor Routes
+@donors_ns.route('/donors')
+class DonorList(Resource):
+    @donors_ns.doc('get_donors')
+    def get(self):
+        """Get all donors"""
+        donors = Donor.query.all()
+        return jsonify([donor.serialize() for donor in donors])
 
-@app.route('/api/donors', methods=['GET'])
-def get_donors():
-    donors = Donor.query.all()
-    return jsonify([donor.serialize() for donor in donors])
+@donors_ns.route('/donors/<int:donor_id>')
+class DonorResource(Resource):
+    @donors_ns.doc('get_donor')
+    def get(self, donor_id):
+        """Get a donor by ID"""
+        donor = Donor.query.get_or_404(donor_id)
+        return jsonify(donor.serialize())
 
-@app.route('/api/donors/<int:donor_id>', methods=['GET'])
-def get_donor(donor_id):
-    donor = Donor.query.get_or_404(donor_id)
-    return jsonify(donor.serialize())
+@donors_ns.route('donors/register')
+class DonorRegister(Resource):
+    @donors_ns.doc('register_donor')
+    @donors_ns.expect(donor_model)
+    def post(self):
+        """Register a donor"""
+        data = request.get_json()
+        hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+        donor = Donor(first_name=data['first_name'], last_name=data['last_name'], email=data['email'], password=hashed_password)
+        db.session.add(donor)
+        db.session.commit()
+        return {'message': 'Donor registered successfully!'}
 
-@app.route('/api/donors/register', methods=['POST'])
-def register_donor():
-    data = request.get_json()
-    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-    donor = Donor(first_name=data['first_name'], last_name=data['last_name'], email=data['email'], password=hashed_password)
-    db.session.add(donor)
-    db.session.commit()
-    return jsonify({'message': 'Donor registered successfully!'})
+@donors_ns.route('/donors/login')
+class DonorLogin(Resource):
+    @donors_ns.doc('login_donor')
+    @donors_ns.expect(donor_model)
+    def post(self):
+        """Login as a donor"""
+        data = request.get_json()
+        donor = Donor.query.filter_by(email=data['email']).first()
+        if donor and bcrypt.check_password_hash(donor.password, data['password']):
+            login_user(donor)
+            return {'message': 'Login successful!'}
+        else:
+            return {'error': 'Invalid email or password'}, 401
 
-@app.route('/api/donors/login', methods=['POST'])
-def login_donor():
-    data = request.get_json()
-    donor = Donor.query.filter_by(email=data['email']).first()
-    if donor and bcrypt.check_password_hash(donor.password, data['password']):
-        login_user(donor)
-        return jsonify({'message': 'Login successful!'})
-    else:
-        return jsonify({'error': 'Invalid email or password'}), 401
+@donors_ns.route('/donors/logout')
+class DonorLogout(Resource):
+    @donors_ns.doc('logout_donor')
+    @login_required
+    def get(self):
+        """Logout as a donor"""
+        logout_user()
+        return {'message': 'Logout successful!'}
 
-@app.route('/api/donors/logout', methods=['GET'])
-@login_required
-def logout_donor():
-    logout_user()
-    return jsonify({'message': 'Logout successful!'})
 
 # Charity Routes
 
