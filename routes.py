@@ -4,14 +4,33 @@ from app import app, db, bcrypt, login_manager
 from models import Charity, Donor, Administrator, Donation, Beneficiary, Story
 from flask_restx import Api, Resource, fields
 
-
 api = Api(app, version='1.0', title='Charity API', description='API for managing charities, donors, and administrators')
-
 
  #Define namespaces
 donors_ns = api.namespace('donors', description='Donor operations')
 charities_ns = api.namespace('charities', description='Charity operations')
 admins_ns = api.namespace('administrators', description='Administrator operations')
+
+# Donor DTO (Data Transfer Object)
+donor_model = api.model('Donor', {
+    'first_name': fields.String(required=True, description='First name'),
+    'last_name': fields.String(required=True, description='Last name'),
+    'email': fields.String(required=True, description='Email address'),
+    'password': fields.String(required=True, description='Password')
+})
+
+# Charity DTO
+charity_model = api.model('Charity', {
+    'name': fields.String(required=True, description='Charity name'),
+    'description': fields.String(required=True, description='Description'),
+    'password': fields.String(required=True, description='Password')
+})
+
+# Administrator DTO
+admin_model = api.model('Administrator', {
+    'username': fields.String(required=True, description='Username'),
+    'password': fields.String(required=True, description='Password')
+})
 
 @login_manager.user_loader
 def load_user(user_id):
