@@ -2,6 +2,7 @@ from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
 from app import app, db, bcrypt, login_manager
 from models import Charity, Donor, Administrator, Donation, Beneficiary, Story
+from flask_restx import Api, Resource, fields
 
 @login_manager.user_loader
 def load_user(user_id):
