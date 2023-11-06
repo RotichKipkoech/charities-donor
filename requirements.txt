@@ -9,8 +9,8 @@ Flask-Bcrypt==1.0.1
 Flask-Cors==4.0.0
 Flask-Login==0.6.2
 Flask-Migrate==4.0.5
-Flask-SQLAlchemy==3.1.1
-Flask-WTF==1.2.1
+Flask-SQLAlchemy
+Flask-WTF
 greenlet==3.0.0
 gunicorn==21.2.0
 idna==3.4
@@ -23,7 +23,7 @@ psycopg2-binary==2.9.9
 python-decouple==3.8
 requests==2.31.0
 SQLAlchemy==2.0.22
-typing_extensions==4.8.0
+typing_extensions
 urllib3==2.0.7
-Werkzeug==2.2.2
-WTForms==3.1.0
+Werkzeug
+WTForms
