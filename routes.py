@@ -2,12 +2,23 @@ from flask import render_template, flash, redirect, url_for, request, jsonify
 from flask_login import login_user, current_user, logout_user, login_required
 from app import app, db, bcrypt, login_manager
 from models import Charity, Donor, Administrator, Donation, Beneficiary, Story
+import base64
+import requests
+from flask import Flask, request
+import datetime
+from decouple import config
 
+from flask_bcrypt import Bcrypt
+
+bcrypt = Bcrypt(app)
 @login_manager.user_loader
 def load_user(user_id):
     return Donor.query.get(int(user_id))
 
 # Donor Routes
+@app.route('/')
+def home():
+    return 'Welcome to Charity API'
 
 @app.route('/api/donors', methods=['GET'])
 def get_donors():
@@ -189,6 +200,79 @@ def delete_charity(charity_id):
     db.session.delete(charity)
     db.session.commit()
     return jsonify({'message': 'Charity deleted!'})
+
+
+
+# Implement M-Pesa Daraja integration functions
+def get_access_token():
+    consumer_key = "6oUYc6pxKSx1qZNOfML2hcAnpAPndeVq"
+    consumer_secret = "T3fmQgKGAkb6rZjl"
+    api_URL = "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+
+    # Make a get request using Python requests library
+    r = requests.get(api_URL, auth=(consumer_key, consumer_secret))
+
+    # Return access_token from the response
+    return r.json()['access_token']
+
+def initiate_stk_push(phone_number, amount):
+    access_token = get_access_token()
+
+    api_url = "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+    business_short_code = "303506"
+    lipa_na_mpesa_online_passkey = "71bc94670907e8ebd110827d8e6908c5a92ef2ee09502b0c3c9db9d2632d762a"
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    lipa_na_mpesa_online_password = base64.b64encode(
+        f"{business_short_code}{lipa_na_mpesa_online_passkey}{timestamp}".encode()
+    ).decode('utf-8')
+
+    payload = {
+        "BusinessShortCode": business_short_code,
+        "Password": lipa_na_mpesa_online_password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": amount,
+        "PartyA": phone_number,
+        "PartyB": business_short_code,
+        "PhoneNumber": phone_number,
+        "CallBackURL": "https://charities-donor.onrender.com",
+        "AccountReference": "Charity",
+        "TransactionDesc": "Donation"
+    }
+
+    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
+
+    response = requests.post(api_url, json=payload, headers=headers)
+
+    return response.json()
+
+# Donation route for your API
+@app.route('/api/donate', methods=['POST'])
+def donate():
+    data = request.get_json()
+   
+    donor_id = data.get('donor_id')
+    amount = data.get('amount')
+    phone_number = data.get('phone_number')
+
+    donor = Donor.query.get(donor_id)
+
+    if donor:
+        response = initiate_stk_push(phone_number, amount)
+       
+        if response.get('ResponseCode') == "0":
+            new_donation = Donation(donor_id=donor_id, amount=amount)
+            db.session.add(new_donation)
+            db.session.commit()
+            return jsonify({'message': 'Donation initiated successfully!'})
+        else:
+            # Handle the case where the STK push failed
+            return jsonify({'error': 'STK push payment failed. Donation not recorded.'})
+
+    return jsonify({'error': 'Donor not found'})
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
