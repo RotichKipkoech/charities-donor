@@ -27,7 +27,7 @@ jsonschema==4.17.3
 Mako==1.2.4
 MarkupSafe==2.1.3
 PyJWT==2.8.0
-pyrsistent==0.20.0
+pyrsistent
 python-dateutil==2.8.2
 pytz==2023.3.post1
 requests==2.31.0
