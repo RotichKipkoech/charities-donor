@@ -19,6 +19,7 @@ flask-restx==1.2.0
 Flask-SQLAlchemy
 Flask-WTF
 greenlet==3.0.1
+gunicorn
 idna==3.4
 importlib-resources
 itsdangerous==2.1.2
