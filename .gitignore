@@ -2,3 +2,5 @@ instance/
 _pycache/
 Pipfile/
 pipefile.lock/
+env/
+tests.py/

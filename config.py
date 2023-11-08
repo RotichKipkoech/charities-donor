@@ -7,3 +7,4 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 #postgres://ken:I4GZXo4iTQecYgRqfSzrgydrzm6nUx4W@dpg-ckvlrgeb0mos73aq0600-a.oregon-postgres.render.com/charities_donor
+#postgresql://ken:BuMCbHzSGodrvDCT4jXMg0p57XCIA6R4@dpg-cl60m9d140uc73ffikh0-a.oregon-postgres.render.com/tuinuiewasichana
