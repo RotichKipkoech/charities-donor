@@ -1,22 +1,39 @@
 from datetime import datetime
 from app import db
+from sqlalchemy.orm import relationship
 
 class Charity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.String(200))
     status = db.Column(db.String(20), default='Pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    # Other fields you have defined
+    password = db.Column(db.String(60), nullable=False)
 
     def serialize(self):
         return {
             'id': self.id,
             'name': self.name,
+            'email': self.email,
             'description': self.description,
             'status': self.status,
             'created_at': self.created_at.isoformat()
         }
 
+    # Define the is_active method
+    def is_active(self):
+        return True 
+    # Define the get_id method to return the user's ID
+    def get_id(self):
+        return str(self.id)
+    
+    # Define the is_authenticated attribute to indicate if the user is authenticated
+    @property
+    def is_authenticated(self):
+        return True  
+    
 class Donor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String(50), nullable=False)
@@ -25,6 +42,9 @@ class Donor(db.Model):
     password = db.Column(db.String(60), nullable=False)
     is_anonymous = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # ... other fields ...
+    donations_received = relationship('Donation', backref='donor', lazy=True)
 
     def serialize(self):
         return {
@@ -35,12 +55,25 @@ class Donor(db.Model):
             'is_anonymous': self.is_anonymous,
             'created_at': self.created_at.isoformat()
         }
-
+    
+    # Define the is_active method
+    def is_active(self):
+        return True 
+    
+    # Define the get_id method to return the user's ID
+    def get_id(self):
+        return str(self.id)
+    
+    # Define the is_authenticated attribute to indicate if the user is authenticated
+    @property
+    def is_authenticated(self):
+        return True  # Return True for authenticated users
+    
 class Administrator(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
-
+    
     def serialize(self):
         return {
             'id': self.id,
@@ -76,7 +109,7 @@ class Donation(db.Model):
     amount = db.Column(db.Float, nullable=False)
     is_anonymous = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
+    is_one_time_donation = db.Column(db.Boolean, default=True)
     def serialize(self):
         return {
             'id': self.id,
@@ -95,6 +128,8 @@ class Story(db.Model):
     date_posted = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     charity_id = db.Column(db.Integer, db.ForeignKey('charity.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    beneficiary_id = db.Column(db.Integer, db.ForeignKey('beneficiary.id'), nullable=False)  # Add beneficiary_id
+
     def serialize(self):
         return {
             'id': self.id,
