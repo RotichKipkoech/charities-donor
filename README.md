@@ -3,13 +3,13 @@
 Tuinue Wasichana Donation Platform API is a Flask-based web service that provides endpoints for managing donors, charities, and donations. It allows donors to register, make donations, and view information related to their donations. Additionally, administrators can manage charities, approve or reject charity applications, and access their profiles.
 
 ## Postgres Images
-![Postgresql](Images/PostgreSQL1.jpeg)
+![PostgreSQL1](https://github.com/RotichKipkoech/charities-donor/assets/134596553/7ca384e4-c84b-4ac5-89b8-671cce10a198)
 
-![Postgresql](Images/PostgreSQL2.jpeg)
+![PostgreSQL2](https://github.com/RotichKipkoech/charities-donor/assets/134596553/9c15a546-9204-4041-968d-689a7f728c20)
 
 ## API Documentation
 
-![Api](Images/Tuinue_API.png)
+![Tuinue_API](https://github.com/RotichKipkoech/charities-donor/assets/134596553/6a6b661a-39e1-43dd-a4e1-0763d2002854)
 
 ## Table of Contents
 
